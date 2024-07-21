@@ -1,21 +1,20 @@
 require('./index.css');
 
-import { IconDelimiter } from '@codexteam/icons';
+const imageIcon = require('./icons/image.js');
+const withBorderIcon = require('./icons/withBorder.js');
+const stretchedIcon = require('./icons/stretched.js');
+const withBackgroundIcon = require('./icons/withBackground.js');
 
 /**
- * Delimiter plugin for Editor.js
+ * Image plugin for Editor.js
  * Supported config:
- *     * defaultStyle {string} (Default: 'star')
- *     * styles {string[]} (Default: Delimiter.DELIMITER_STYLES)
- *     * defaultLineWidth {number} (Default: 25)
- *     * lineWidths {number[]} (Default: Delimiter.LINE_WIDTHS)
- *     * defaultLineThickness {string} (Default: '1px')
- *     * lineThickness {string[]} (Default: Delimiter.LINE_THICKNESS)
+ *     * imageAlt {string} (Default: 'picture')
+ *     * enableCaption {boolean} (Default: false)
  *
- * @class Delimiter
- * @typedef {Delimiter}
+ * @class Image
+ * @typedef {Image}
  */
-export default class Delimiter {
+export default class Image {
   /**
    * Editor.js Toolbox settings
    *
@@ -25,7 +24,7 @@ export default class Delimiter {
    */
   static get toolbox() {
     return {
-      icon: IconDelimiter, title: 'Delimiter',
+      icon: imageIcon, title: 'Image',
     };
   }
 
@@ -41,206 +40,52 @@ export default class Delimiter {
   }
 
   /**
-   * All supported delimiter styles
-   *
-   * @static
-   * @readonly
-   * @type {string[]}
-   */
-  static get DELIMITER_STYLES() {
-    return ['star', 'dash', 'line'];
-  }
-
-  /**
-   * Default delimiter style
-   *
-   * @static
-   * @readonly
-   * @type {string}
-   */
-  static get DEFAULT_DELIMITER_STYLE() {
-    return 'star';
-  }
-
-  /**
-   * All supported widths for delimiter line style
-   *
-   * @static
-   * @readonly
-   * @type {number[]}
-   */
-  static get LINE_WIDTHS() {
-    return [8, 15, 25, 35, 50, 60, 100];
-  }
-
-  /**
-   * Default width for delimiter line style
-   *
-   * @static
-   * @readonly
-   * @type {number}
-   */
-  static get DEFAULT_LINE_WIDTH() {
-    return 25;
-  }
-
-  /**
-   * All supported thickness options for delimiter line style
-   *
-   * @static
-   * @readonly
-   * @type {string[]}
-   */
-  static get LINE_THICKNESS() {
-    return ['0.5px', '1px', '1.5px', '2px', '2.5px', '3px'];
-  }
-
-  /**
-   * Default thickness for delimiter line style
-   *
-   * @static
-   * @readonly
-   * @type {string}
-   */
-  static get DEFAULT_LINE_THICKNESS() {
-    return '1px';
-  }
-
-  /**
    * Automatic sanitize config for Editor.js
    *
    * @static
    * @readonly
-   * @type {{ style: boolean; lineWidth: boolean; lineThickness: boolean; }}
+   * @type {{ url: boolean; caption: {};withBorder: boolean; withBackground: boolean; stretched: boolean; }}
    */
   static get sanitize() {
     return {
-      style: false,
-      lineWidth: false,
-      lineThickness: false,
+      url: false, // Disallow HTML
+      caption: {}, // only tags from Inline Toolbar 
+      withBorder: false, // Disallow HTML
+      withBackground: false, // Disallow HTML
+      stretched: false, // Disallow HTML
     };
   }
 
   /**
-   * Creates an instance of Delimiter.
+   * Creates an instance of Image.
    *
    * @constructor
-   * @param {{ api: {}; config: {}; data: {}; }} props
+   * @param {{ api: {}; readOnly: boolean; config: {}; data: {}; }} props
    */
   constructor({
-    api, config, data,
+    api, readOnly, config, data,
   }) {
     this._api = api;
+    this._readOnly = readOnly;
     this._config = config || {};
     this._data = this._normalizeData(data);
     this._CSS = {
-      block: this._api.styles.block,
-      wrapper: 'cb-delimiter',
-      wrapperForStyle: (style) => `cb-delimiter-${style}`,
+      wrapper: 'ce-image-wrapper',
+      input: this._api.styles.input,
+      image: 'ce-image',
+      caption: 'ce-image-caption',
     };
     this._element = this._getElement();
   }
 
   /**
-   * All available delimiter styles
-   * - Finds intersection between supported and user selected delimiter styles
+   * User's preference for enabling caption
    *
    * @readonly
-   * @type {string[]}
+   * @type {boolean}
    */
-  get availableDelimiterStyles() {
-    return this._config.styles ? Delimiter.DELIMITER_STYLES.filter(
-      (style) => this._config.styles.includes(style),
-    ) : Delimiter.DELIMITER_STYLES;
-  }
-
-  /**
-   * User's default delimiter style
-   * - Finds union of user choice and the actual default
-   *
-   * @readonly
-   * @type {string}
-   */
-  get userDefaultDelimiterStyle() {
-    if (this._config.defaultStyle) {
-      const userSpecified = this.availableDelimiterStyles.find(
-        (style) => style === this._config.defaultStyle,
-      );
-      if (userSpecified) {
-        return userSpecified;
-      }
-      // eslint-disable-next-line no-console
-      console.warn('(ง\'̀-\'́)ง Delimiter Tool: the default style specified is invalid');
-    }
-    return Delimiter.DEFAULT_DELIMITER_STYLE;
-  }
-
-  /**
-   * All available widths for delimiter line style
-   * - Finds all valid user selected line widths (falls back to default when empty)
-   *
-   * @readonly
-   * @type {number[]}
-   */
-  get availableLineWidths() {
-    return this._config.lineWidths ? Delimiter.LINE_WIDTHS.filter(
-      (width) => this._config.lineWidths.includes(width),
-    ) : Delimiter.LINE_WIDTHS;
-  }
-
-  /**
-   * User's default line width
-   * - Finds union of user choice and the actual default
-   *
-   * @readonly
-   * @type {number}
-   */
-  get userDefaultLineWidth() {
-    if (this._config.defaultLineWidth) {
-      const userSpecified = this.availableLineWidths.find(
-        (width) => width === this._config.defaultLineWidth,
-      );
-      if (userSpecified) {
-        return userSpecified;
-      }
-      // eslint-disable-next-line no-console
-      console.warn('(ง\'̀-\'́)ง Delimiter Tool: the default line width specified is invalid');
-    }
-    return Delimiter.DEFAULT_LINE_WIDTH;
-  }
-
-  /**
-   * All available line thickness options
-   * - Finds intersection between supported and user selected line thickness options
-   *
-   * @readonly
-   * @type {string[]}
-   */
-  get availableLineThickness() {
-    return this._config.lineThickness ? Delimiter.LINE_THICKNESS.filter(
-      (thickness) => this._config.lineThickness.includes(thickness),
-    ) : Delimiter.LINE_THICKNESS;
-  }
-
-  /**
-   * User's default line thickness
-   * - Finds union of user choice and the actual default
-   *
-   * @readonly
-   * @type {string}
-   */
-  get userDefaultLineThickness() {
-    if (this._config.defaultLineThickness) {
-      const userSpecified = this.availableLineThickness.find(
-        (thickness) => thickness === this._config.defaultLineThickness,
-      );
-      if (userSpecified) {
-        return userSpecified;
-      }
-      // eslint-disable-next-line no-console
-      console.warn('(ง\'̀-\'́)ง Delimiter Tool: the default line thickness specified is invalid');
-    }
-    return Delimiter.DEFAULT_LINE_THICKNESS;
+  get userEnableCaption() {
+    return Boolean(this._config.enableCaption);
   }
 
   /**
@@ -255,71 +100,12 @@ export default class Delimiter {
       data = {};
     }
 
-    newData.style = data.style || this.userDefaultDelimiterStyle;
-    newData.lineWidth = parseInt(data.lineWidth, 10) || this.userDefaultLineWidth;
-    newData.lineThickness = data.lineThickness || this.userDefaultLineThickness;
+    newData.url = data.url || '';
+    newData.caption = data.caption || '';
+    newData.withBorder = Boolean(data.withBorder);
+    newData.stretched = Boolean(data.stretched);
+    newData.withBackground = Boolean(data.withBackground);
     return newData;
-  }
-
-  /**
-   * Current delimiter style
-   *
-   * @readonly
-   * @type {string}
-   */
-  get currentDelimiterStyle() {
-    let delimiterStyle = this.availableDelimiterStyles.find((style) => style === this._data.style);
-    if (!delimiterStyle) {
-      delimiterStyle = this.userDefaultDelimiterStyle;
-    }
-    return delimiterStyle;
-  }
-
-  /**
-   * Current width for delimiter line style
-   *
-   * @readonly
-   * @type {number}
-   */
-  get currentLineWidth() {
-    let lineWidth = this.availableLineWidths.find((width) => width === this._data.lineWidth);
-    if (!lineWidth) {
-      lineWidth = this.userDefaultLineWidth;
-    }
-    return lineWidth;
-  }
-
-  /**
-   * Current thickness for delimiter line style
-   *
-   * @readonly
-   * @type {string}
-   */
-  get currentLineThickness() {
-    let lineThickness = this.availableLineThickness.find(
-      (thickness) => thickness === this._data.lineThickness,
-    );
-    if (!lineThickness) {
-      lineThickness = this.userDefaultLineThickness;
-    }
-    return lineThickness;
-  }
-
-  createChildElement() {
-    let child;
-    if (this.currentDelimiterStyle === 'star') {
-      child = document.createElement('span');
-      child.textContent = '***';
-      return child;
-    } if (this.currentDelimiterStyle === 'dash') {
-      child = document.createElement('span');
-      child.textContent = '———';
-      return child;
-    }
-    child = document.createElement('hr');
-    child.style.width = `${this.currentLineWidth}%`;
-    child.style.borderWidth = this.currentLineThickness;
-    return child;
   }
 
   /**
@@ -328,83 +114,61 @@ export default class Delimiter {
    * @returns {*}
    */
   _getElement() {
-    const div = document.createElement('DIV');
-    div.classList.add(
-      this._CSS.wrapper,
-      this._CSS.block,
-      this._CSS.wrapperForStyle(this.currentDelimiterStyle),
-    );
-    div.appendChild(this.createChildElement());
-    return div;
-  }
+    this._wrapper = document.createElement('div');
+    this._wrapper.classList.add(this._CSS.wrapper);
 
-  /**
-   * Callback for Delimiter style change to star
-   */
-  _setStar() {
-    if (this.currentDelimiterStyle !== 'star') {
-      this._data.style = 'star';
-
-      // Replace hr child with span child
-      if (this._element.parentNode) {
-        const newElement = this._getElement();
-        this._element.parentNode.replaceChild(newElement, this._element);
-        this._element = newElement;
-      }
+    // If saved data is being rendered
+    if (this._data.url){
+      this._createImage(this._data.url);
+      return this._wrapper;
     }
-  }
 
-  /**
-   * Callback for Delimiter style change to dash
-   */
-  _setDash() {
-    if (this.currentDelimiterStyle !== 'dash') {
-      this._data.style = 'dash';
+    const input = document.createElement('input');
+    input.classList.add(this._CSS.input);
+    input.placeholder = 'Paste an image URL...';
+    // input.value = this._data.url;
 
-      // Replace hr child with span child
-      if (this._element.parentNode) {
-        const newElement = this._getElement();
-        this._element.parentNode.replaceChild(newElement, this._element);
-        this._element = newElement;
+    input.addEventListener('paste', (event) => {
+      this._createImage(event.clipboardData.getData('text'));
+    });
+
+    input.addEventListener('keydown', (event) => {
+      if (event.code === 'Enter') {
+        this._createImage(event.target.value);
       }
-    }
+    });
+
+    this._wrapper.appendChild(input);
+    return this._wrapper;
   }
 
   /**
-   * Callback for Delimiter style change to line or line width change
+   * To create an image upon paste or Enter key
    *
-   * @param {number} newWidth
+   * @param {string} url
    */
-  _setLine(newWidth) {
-    this._data.lineWidth = newWidth;
+  _createImage(url){
+    const image = document.createElement('img');
+    image.classList.add(this._CSS.image);
+    image.src = url;
+    image.alt = this._config.imageAlt || 'picture';
+    this._data.url = url;
 
-    if (this.currentDelimiterStyle !== 'line') {
-      this._data.style = 'line';
+    this._wrapper.innerHTML = '';
+    this._wrapper.appendChild(image);
 
-      // Replace span child with hr child
-      if (this._element.parentNode) {
-        const newElement = this._getElement();
-        this._element.parentNode.replaceChild(newElement, this._element);
-        this._element = newElement;
-      }
-    } else {
-      // Change hr width
-      const hrElement = this._element.querySelector('hr');
-      hrElement.style.width = `${newWidth}%`;
+    // Only show caption if enabled
+    if (this.userEnableCaption) {
+      this._caption = document.createElement('input');
+      this._caption.classList.add(this._CSS.caption);
+      this._caption.placeholder = 'Enter a caption';
+      this._caption.value = this._data.caption;
+      this._caption.contentEditable = !this._readOnly;
+      this._wrapper.appendChild(this._caption);
     }
-  }
 
-  /**
-   * Callback for line thickness change
-   *
-   * @param {string} newThickness
-   */
-  _setLineThickness(newThickness) {
-    this._data.lineThickness = newThickness;
-
-    // Change hr thickness
-    const hrElement = this._element.querySelector('hr');
-    hrElement.style.borderWidth = newThickness;
+    // For adding relevant block settings classes
+    this._acceptTuneView();
   }
 
   /**
@@ -419,59 +183,83 @@ export default class Delimiter {
   /**
    * Editor.js save method to extract block data from the UI
    *
-   * @param {*} blockContent
-   * @returns {{ style: string; lineWidth: number; lineThickness: string; }}
+   * @returns {{ url: string; caption: string; }}
    */
   save() {
     return {
-      style: this.currentDelimiterStyle,
-      lineWidth: this.currentLineWidth,
-      lineThickness: this.currentLineThickness,
-    };
+      url: this._data.url,
+      caption: this._caption && this._caption.value ? this._caption.value : '',
+      withBorder: this._data.withBorder,
+      stretched: this._data.stretched,
+      withBackground: this._data.withBackground,
+    }
   }
 
   /**
-   * Block Tunes Menu items
+   * Editor.js validation (on save) code for this block
+   * - Skips empty URLs
+   *
+   * @param {*} savedData
+   * @returns {boolean}
+   */
+  validate(savedData){
+    if (!savedData.url.trim()){
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * Block Tunes Settings
    *
    * @returns {[{*}]}
    */
   renderSettings() {
-    const starStyle = [{
-      icon: IconDelimiter,
-      label: 'Star',
-      onActivate: () => this._setStar(),
-      isActive: this.currentDelimiterStyle === 'star',
-      closeOnActivate: true,
-      toggle: 'star',
-    }];
-    const dashStyle = [{
-      icon: IconDelimiter,
-      label: 'Dash',
-      onActivate: () => this._setDash(),
-      isActive: this.currentDelimiterStyle === 'dash',
-      closeOnActivate: true,
-      toggle: 'dash',
-    }];
-    const lineWidths = this.availableLineWidths.map((width) => ({
-      icon: IconDelimiter,
-      label: `Line ${width}%`,
-      onActivate: () => this._setLine(width),
-      isActive: this.currentDelimiterStyle === 'line' && width === this.currentLineWidth,
-      closeOnActivate: true,
-      toggle: 'line',
-    }));
-    let lineThickness = [];
-    if (this.currentDelimiterStyle === 'line') {
-      lineThickness = this.availableLineThickness.map((thickness) => ({
-        icon: IconDelimiter,
-        label: `Thickness ${parseInt(parseFloat(thickness) * 2, 10)}`,
-        onActivate: () => this._setLineThickness(thickness),
-        isActive: thickness === this.currentLineThickness,
+    return [
+      {
+        icon: withBorderIcon,
+        label: this._api.i18n.t('Add Border'),
+        onActivate: () => this._toggleTune('withBorder'),
+        isActive: Boolean(this._data.withBorder),
         closeOnActivate: true,
-        toggle: 'thickness',
-      }));
-    }
+        toggle: true,
+      },
+      {
+        icon: stretchedIcon,
+        label: this._api.i18n.t('Stretch Image'),
+        onActivate: () => this._toggleTune('stretched'),
+        isActive: Boolean(this._data.stretched),
+        closeOnActivate: true,
+        toggle: true,
+      },
+      {
+        icon: withBackgroundIcon,
+        label: this._api.i18n.t('Add Background'),
+        onActivate: () => this._toggleTune('withBackground'),
+        isActive: Boolean(this._data.withBackground),
+        closeOnActivate: true,
+        toggle: true,
+      }
+    ]
+  }
 
-    return [...starStyle, ...dashStyle, ...lineWidths, ...lineThickness];
+  /**
+   * To toggle the state of the setting
+   *
+   * @param {string} tune
+   */
+  _toggleTune(tune) {
+    this._data[tune] = !this._data[tune];
+    this._acceptTuneView();
+  }
+
+  /**
+   * Add specified class corresponding to the activated tunes
+   * @private
+   */
+  _acceptTuneView() {
+    this._wrapper.classList.toggle('withBorder', !!this._data.withBorder);
+    this._wrapper.classList.toggle('withBackground', !!this._data.withBackground);
+    this._api.blocks.stretchBlock(this._api.blocks.getCurrentBlockIndex(), !!this._data.stretched);
   }
 }
