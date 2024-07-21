@@ -63,12 +63,13 @@ export default class Image {
    * @param {{ api: {}; readOnly: boolean; config: {}; data: {}; }} props
    */
   constructor({
-    api, readOnly, config, data,
+    api, readOnly, config, data, block,
   }) {
     this._api = api;
     this._readOnly = readOnly;
     this._config = config || {};
     this._data = this._normalizeData(data);
+    this._block = block;
     this._CSS = {
       wrapper: 'ce-image-wrapper',
       input: this._api.styles.input,
@@ -260,6 +261,12 @@ export default class Image {
   _acceptTuneView() {
     this._wrapper.classList.toggle('withBorder', !!this._data.withBorder);
     this._wrapper.classList.toggle('withBackground', !!this._data.withBackground);
-    this._api.blocks.stretchBlock(this._api.blocks.getCurrentBlockIndex(), !!this._data.stretched);
+    // For stretching the image
+    Promise.resolve().then(() => {
+      this._block.stretched = !!this._data.stretched;
+    })
+    .catch(err => {
+      console.error(err);
+    });
   }
 }
