@@ -42,6 +42,7 @@ const editor = new EditorJS({
 |---|---|---|---|---|
 |imageAlt|`string`|`Yes`|_picture_|Alternate text for images|
 |enableCaption|`boolean`|`Yes`|`false`|Flag to enable image caption|
+|captionPlaceholder|`string`|`Yes`|_Enter a caption_|Placeholder text for image caption|
 
 
 ### Custom Configuration
@@ -53,7 +54,8 @@ const editor = EditorJS({
       class: Image,
       inlineToolbar: true,
       config: {
-        enableCaption: true
+        enableCaption: true,
+        captionPlaceholder: 'Enter a caption'
       }
     }
   }

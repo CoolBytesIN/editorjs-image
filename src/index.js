@@ -10,6 +10,7 @@ const withBackgroundIcon = require('./icons/withBackground.js');
  * Supported config:
  *     * imageAlt {string} (Default: 'picture')
  *     * enableCaption {boolean} (Default: false)
+ *     * captionPlaceholder {string} (Default: 'Enter a caption')
  *
  * @class Image
  * @typedef {Image}
@@ -90,6 +91,16 @@ export default class Image {
   }
 
   /**
+   * User's caption placeholder
+   *
+   * @readonly
+   * @type {boolean}
+   */
+  get userCaptionPlaceholder() {
+    return this._config.captionPlaceholder || 'Enter a caption';
+  }
+
+  /**
    * To normalize input data
    *
    * @param {*} data
@@ -102,7 +113,7 @@ export default class Image {
     }
 
     newData.url = data.url || '';
-    newData.caption = data.caption || '';
+    newData.caption = data.caption || this.userCaptionPlaceholder;
     newData.withBorder = Boolean(data.withBorder);
     newData.stretched = Boolean(data.stretched);
     newData.withBackground = Boolean(data.withBackground);
@@ -160,10 +171,9 @@ export default class Image {
 
     // Only show caption if enabled
     if (this.userEnableCaption) {
-      this._caption = document.createElement('input');
+      this._caption = document.createElement('div');
       this._caption.classList.add(this._CSS.caption);
-      this._caption.placeholder = 'Enter a caption';
-      this._caption.value = this._data.caption;
+      this._caption.innerHTML = this._data.caption;
       this._caption.contentEditable = !this._readOnly;
       this._wrapper.appendChild(this._caption);
     }
@@ -189,7 +199,7 @@ export default class Image {
   save() {
     return {
       url: this._data.url,
-      caption: this._caption && this._caption.value ? this._caption.value : '',
+      caption: this._caption && this._caption.innerHTML ? this._caption.innerHTML : '',
       withBorder: this._data.withBorder,
       stretched: this._data.stretched,
       withBackground: this._data.withBackground,
